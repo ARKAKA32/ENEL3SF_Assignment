@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Sentry — Incident Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ============ PUBLIC REPORT VIEW ============ -->
+  <div class="public-view" id="publicView">
+    <header class="public-topbar">
+      <div class="brand">
+        <span class="brand-mark">&#9679;</span>
+        <span class="brand-name">SENTRY</span>
+      </div>
+      <button class="btn btn-ghost" id="staffLoginBtn">Staff login</button>
+    </header>
+
+    <main class="public-main">
+      <h1>Report an emergency</h1>
+      <p class="public-sub">Describe what's happening. Your report is classified automatically and sent to the right responders.</p>
+
+      <form id="reportForm" class="public-form">
+        <textarea id="messageInput" rows="5" placeholder="What's happening? Include what, where, and who's involved if you can." required></textarea>
+
+        <div class="location-row">
+          <button type="button" class="btn btn-ghost" id="useLocationBtn">📍 Use my location</button>
+          <span id="locationStatus" class="location-status"></span>
+        </div>
+
+        <label class="anon-toggle">
+          <input type="checkbox" id="anonToggle" checked />
+          Submit anonymously (no personal details are collected or stored)
+        </label>
+
+        <button type="submit" class="btn btn-primary" id="submitBtn">Submit report</button>
+        <div id="submitResult" class="submit-result"></div>
+      </form>
+    </main>
+  </div>
+
+  <!-- ============ STAFF DASHBOARD (hidden until authenticated) ============ -->
+  <div class="console" id="dashboardView" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <button class="menu-toggle" id="menuToggleBtn" aria-label="Open filters">&#9776;</button>
+        <span class="brand-mark">&#9679;</span>
+        <span class="brand-name">SENTRY</span>
+        <span class="brand-sub">INCIDENT CONSOLE</span>
+      </div>
+      <div class="topbar-right">
+        <div class="clock" id="clock">--:--:--</div>
+        <button class="btn btn-ghost" id="logoutBtn">Log out</button>
+      </div>
+    </header>
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <div class="layout">
+      <aside class="sidebar" id="sidebar">
+        <button class="sidebar-close" id="sidebarCloseBtn" aria-label="Close filters">&times;</button>
+        <div class="sidebar-block">
+          <div class="sidebar-label">Queue</div>
+          <nav class="status-nav" id="statusNav">
+            <button class="status-item active" data-status="">All incidents</button>
+            <button class="status-item" data-status="new">New</button>
+            <button class="status-item" data-status="acknowledged">Acknowledged</button>
+            <button class="status-item" data-status="assigned">Assigned</button>
+            <button class="status-item" data-status="in_progress">In progress</button>
+            <button class="status-item" data-status="resolved">Resolved</button>
+            <button class="status-item" data-status="closed">Closed</button>
+          </nav>
+        </div>
+        <div class="sidebar-block stats-block">
+          <div class="sidebar-label">Snapshot</div>
+          <div class="stats" id="statsBlock">
+            <div class="stat-row"><span>Open</span><span id="statOpen">0</span></div>
+            <div class="stat-row"><span>Critical</span><span id="statCritical">0</span></div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="queue-panel">
+        <div class="queue-header">
+          <h1 id="queueTitle">All incidents</h1>
+          <span class="queue-count" id="queueCount">0 reports</span>
+        </div>
+        <div class="queue-list" id="queueList">
+          <div class="empty-state">Loading incidents&hellip;</div>
+        </div>
+      </main>
+
+      <aside class="detail-drawer" id="detailDrawer">
+        <div class="drawer-empty" id="drawerEmpty"><p>Select an incident to view details.</p></div>
+        <div class="drawer-content" id="drawerContent" hidden></div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Staff login modal -->
+  <div class="modal-overlay" id="loginModalOverlay" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Staff login</h2>
+        <button class="modal-close" id="closeLoginBtn">&times;</button>
+      </div>
+      <form id="loginForm" class="modal-body">
+        <label class="field">
+          <span>Email</span>
+          <input type="email" id="loginEmail" required />
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input type="password" id="loginPassword" required />
+        </label>
+        <div class="submit-row">
+          <span class="submit-hint" id="loginHint"></span>
+          <button type="submit" class="btn btn-primary">Log in</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
