@@ -41,6 +41,7 @@ Respond ONLY with a single JSON object, no markdown, no commentary, matching exa
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
+      signal: AbortSignal.timeout(10000),
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
@@ -69,8 +70,8 @@ Respond ONLY with a single JSON object, no markdown, no commentary, matching exa
     return {
       category: CATEGORIES.includes(parsed.category) ? parsed.category : 'other',
       severity: SEVERITIES.includes(parsed.severity) ? parsed.severity : 'medium',
-      title: parsed.title || message.slice(0, 60),
-      ai_notes: parsed.ai_notes || null,
+      title: typeof parsed.title === 'string' && parsed.title.trim() ? parsed.title.trim().slice(0, 60) : message.slice(0, 60),
+      ai_notes: typeof parsed.ai_notes === 'string' ? parsed.ai_notes.slice(0, 2000) : null,
     };
   } catch (err) {
     console.error('Classification failed, using keyword fallback:', err.message);
