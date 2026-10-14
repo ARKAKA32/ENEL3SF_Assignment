@@ -1,133 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Sentry — Incident Console</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0b0f14">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/vendor/leaflet/leaflet.css" />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
-  <!-- ============ PUBLIC REPORT VIEW ============ -->
-  <div class="public-view" id="publicView">
-    <header class="public-topbar">
-      <div class="brand">
-        <span class="brand-mark">&#9679;</span>
-        <span class="brand-name">SENTRY</span>
+<div class="public-view" id="publicView">
+  <header class="public-topbar"><div class="brand"><span class="brand-mark">&#9679;</span><span class="brand-name">SENTRY</span></div>
+    <div class="topbar-right"><button class="btn btn-ghost" id="userLoginBtn">Log in / Register</button><button class="btn btn-ghost" id="publicLogoutBtn" hidden>Log out</button><button class="btn btn-ghost" id="staffLoginBtn">Staff login</button></div>
+  </header>
+  <main class="public-main">
+    <h1>Report an emergency</h1><p class="public-sub">Describe what is happening so staff can assess your report.</p>
+    <form id="reportForm" class="public-form">
+      <label class="field" for="messageInput">Incident description</label>
+      <textarea id="messageInput" rows="5" maxlength="5000" placeholder="What is happening? Include what, where and who is involved." required></textarea>
+      <label class="field">Location method<select id="locationMode" class="select-field"><option value="none">No location provided</option><option value="gps">Use my current location</option><option value="manual">Enter a location manually</option></select></label>
+      <div id="gpsFields" hidden><button type="button" class="btn btn-ghost" id="useLocationBtn">Use my location</button></div>
+      <div id="manualFields" hidden>
+        <label class="field">Address or landmark<input id="locationText" maxlength="500" placeholder="e.g. Gate 3, Main Road, Durban" /></label>
+        <p class="help">Coordinates are optional. Coordinates let staff place the report on the incident map.</p>
+        <div class="coordinate-fields"><label class="field">Latitude<input type="number" id="latitudeInput" min="-90" max="90" step="any" placeholder="-29.86" /></label><label class="field">Longitude<input type="number" id="longitudeInput" min="-180" max="180" step="any" placeholder="31.03" /></label></div>
       </div>
-      <button class="btn btn-ghost" id="staffLoginBtn">Staff login</button>
-    </header>
-
-    <main class="public-main">
-      <h1>Report an emergency</h1>
-      <p class="public-sub">Describe what's happening. Your report is classified automatically and sent to the right responders.</p>
-
-      <form id="reportForm" class="public-form">
-        <textarea id="messageInput" rows="5" placeholder="What's happening? Include what, where, and who's involved if you can." required></textarea>
-
-        <div class="location-row">
-          <button type="button" class="btn btn-ghost" id="useLocationBtn">📍 Use my location</button>
-          <span id="locationStatus" class="location-status"></span>
-        </div>
-
-        <label class="anon-toggle">
-          <input type="checkbox" id="anonToggle" checked />
-          Submit anonymously (no personal details are collected or stored)
-        </label>
-
-        <button type="submit" class="btn btn-primary" id="submitBtn">Submit report</button>
-        <div id="submitResult" class="submit-result"></div>
-      </form>
+      <span id="locationStatus" class="location-status" role="status"></span>
+      <label class="field">Images (optional)<input type="file" id="mediaInput" multiple accept="image/png,image/jpeg" /></label>
+      <p class="help">Up to five PNG/JPEG images, each up to 5 MB. Avoid including personal details in images.</p>
+      <label class="anon-toggle"><input type="checkbox" id="anonToggle" checked />Submit anonymously (your account is not linked to this report)</label>
+      <p class="help" id="reportIdentityHint">Log in and turn off anonymous reporting to track your report and receive updates.</p>
+      <button type="submit" class="btn btn-primary" id="submitBtn">Submit report</button>
+      <div id="submitResult" class="submit-result" role="status" aria-live="polite"></div>
+    </form>
+    <section class="public-section" id="accountSection" hidden>
+      <h2 id="accountHeading">My account</h2>
+      <div class="push-controls"><button class="btn btn-ghost" id="pushBtn">Enable push notifications</button><span class="help" id="pushHint" role="status"></span></div>
+      <h2>My reports</h2><p class="help">Anonymous reports are not linked to your account and cannot be tracked here.</p>
+      <div id="myReports"></div><div id="myReportDetail" class="report-detail" hidden></div>
+    </section>
+    <section class="public-section"><h2>Public broadcasts</h2><p class="help">Active updates from staff. These broadcasts apply to all users; area filtering will follow with the map.</p><div id="publicBroadcasts" aria-live="polite"></div></section>
+  </main>
+</div>
+<div class="console" id="dashboardView" hidden>
+  <header class="topbar"><div class="brand"><button class="menu-toggle" id="menuToggleBtn" aria-label="Open filters">&#9776;</button><span class="brand-mark">&#9679;</span><span class="brand-name">SENTRY</span><span class="brand-sub">INCIDENT CONSOLE</span></div>
+    <div class="topbar-right"><div class="clock" id="clock">--:--:--</div><button class="btn btn-ghost" id="reportViewBtn">Report / My account</button><button class="btn btn-ghost" id="logoutBtn">Log out</button></div>
+  </header>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"><button class="sidebar-close" id="sidebarCloseBtn" aria-label="Close filters">&times;</button>
+      <div class="sidebar-block"><div class="sidebar-label">Queue</div><nav class="status-nav" id="statusNav">
+        <button class="status-item active" data-status="">All incidents</button><button class="status-item" data-status="new">New</button><button class="status-item" data-status="acknowledged">Acknowledged</button><button class="status-item" data-status="assigned">Assigned</button><button class="status-item" data-status="in_progress">In progress</button><button class="status-item" data-status="resolved">Resolved</button><button class="status-item" data-status="closed">Closed</button>
+      </nav></div>
+      <div class="sidebar-block"><div class="sidebar-label">Snapshot (all reports)</div><div class="stats"><div class="stat-row"><span>Open</span><span id="statOpen">0</span></div><div class="stat-row"><span>Critical open</span><span id="statCritical">0</span></div></div></div>
+      <button class="btn btn-ghost" id="mapBtn">Open incident map</button>
+      <div class="sidebar-block" id="broadcastComposer" hidden><h2 class="small-heading">Publish a broadcast</h2><form id="broadcastForm">
+        <label class="field">Title<input id="broadcastTitle" maxlength="100" required /></label>
+        <label class="field">Message<textarea class="textarea-field" id="broadcastMessage" maxlength="2000" rows="4" required></textarea></label>
+        <label class="field">Severity<select class="select-field" id="broadcastSeverity"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="critical">Critical</option></select></label>
+        <label class="field">Expires after (hours)<input type="number" id="broadcastHours" min="1" max="168" value="24" required /></label>
+        <button class="btn btn-primary" type="submit">Publish</button><p class="help" id="broadcastHint" role="status"></p>
+      </form></div>
+    </aside>
+    <main class="queue-panel">
+      <div class="queue-header"><h1 id="queueTitle">All incidents</h1><span class="queue-count" id="queueCount">0 reports</span><button class="btn btn-ghost" id="refreshBtn">Refresh</button></div>
+      <div class="queue-filters"><label class="field">Search<input id="searchInput" type="search" placeholder="Reference, description or location" /></label><label class="field">Category<select class="select-field" id="categoryFilter"><option value="">All categories</option><option value="fire">Fire</option><option value="police">Police</option><option value="medical">Medical</option><option value="child_services">Child Services</option><option value="other">Other</option></select></label><label class="field">Severity<select class="select-field" id="severityFilter"><option value="">All severities</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label></div>
+      <p id="queueHint" class="help" role="status"></p><div class="queue-list" id="queueList"><div class="empty-state">Loading incidents…</div></div>
     </main>
+    <aside class="detail-drawer" id="detailDrawer"><div class="drawer-empty" id="drawerEmpty">Select an incident to view details.</div><div class="drawer-content" id="drawerContent" hidden></div></aside>
   </div>
-
-  <!-- ============ STAFF DASHBOARD (hidden until authenticated) ============ -->
-  <div class="console" id="dashboardView" hidden>
-    <header class="topbar">
-      <div class="brand">
-        <button class="menu-toggle" id="menuToggleBtn" aria-label="Open filters">&#9776;</button>
-        <span class="brand-mark">&#9679;</span>
-        <span class="brand-name">SENTRY</span>
-        <span class="brand-sub">INCIDENT CONSOLE</span>
-      </div>
-      <div class="topbar-right">
-        <div class="clock" id="clock">--:--:--</div>
-        <button class="btn btn-ghost" id="logoutBtn">Log out</button>
-      </div>
-    </header>
-
-    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-
-    <div class="layout">
-      <aside class="sidebar" id="sidebar">
-        <button class="sidebar-close" id="sidebarCloseBtn" aria-label="Close filters">&times;</button>
-        <div class="sidebar-block">
-          <div class="sidebar-label">Queue</div>
-          <nav class="status-nav" id="statusNav">
-            <button class="status-item active" data-status="">All incidents</button>
-            <button class="status-item" data-status="new">New</button>
-            <button class="status-item" data-status="acknowledged">Acknowledged</button>
-            <button class="status-item" data-status="assigned">Assigned</button>
-            <button class="status-item" data-status="in_progress">In progress</button>
-            <button class="status-item" data-status="resolved">Resolved</button>
-            <button class="status-item" data-status="closed">Closed</button>
-          </nav>
-        </div>
-        <div class="sidebar-block stats-block">
-          <div class="sidebar-label">Snapshot</div>
-          <div class="stats" id="statsBlock">
-            <div class="stat-row"><span>Open</span><span id="statOpen">0</span></div>
-            <div class="stat-row"><span>Critical</span><span id="statCritical">0</span></div>
-          </div>
-        </div>
-      </aside>
-
-      <main class="queue-panel">
-        <div class="queue-header">
-          <h1 id="queueTitle">All incidents</h1>
-          <span class="queue-count" id="queueCount">0 reports</span>
-        </div>
-        <div class="queue-list" id="queueList">
-          <div class="empty-state">Loading incidents&hellip;</div>
-        </div>
-      </main>
-
-      <aside class="detail-drawer" id="detailDrawer">
-        <div class="drawer-empty" id="drawerEmpty"><p>Select an incident to view details.</p></div>
-        <div class="drawer-content" id="drawerContent" hidden></div>
-      </aside>
+</div>
+<div class="modal-overlay" id="loginModalOverlay" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+  <div class="modal-header"><h2 id="loginTitle">Log in</h2><button class="modal-close" id="closeLoginBtn" aria-label="Close login">&times;</button></div>
+  <form id="loginForm" class="modal-body">
+    <label class="field" id="registerNameField" hidden>Name (optional)<input id="registerName" maxlength="100" autocomplete="name" /></label>
+    <label class="field">Email<input type="email" id="loginEmail" required autocomplete="email" /></label>
+    <label class="field">Password<input type="password" id="loginPassword" required autocomplete="current-password" /></label>
+    <label class="field" id="confirmPasswordField" hidden>Confirm password<input type="password" id="confirmPassword" autocomplete="new-password" /></label>
+    <p class="help" id="passwordHelp" hidden>Use at least 8 characters, including a letter, number and symbol.</p>
+    <div class="submit-row"><span class="submit-hint" id="loginHint" role="status"></span><button type="submit" class="btn btn-primary" id="loginSubmitBtn">Log in</button></div>
+    <button type="button" class="btn btn-ghost" id="authModeBtn">Create an account</button>
+  </form>
+</div></div>
+<div class="modal-overlay" id="mapModalOverlay" hidden>
+  <div class="modal map-modal" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
+    <div class="modal-header"><div><h2 id="mapTitle">Incident map</h2><p class="help">Explore reports by location and open an incident from its marker.</p></div><button class="modal-close" id="closeMapBtn" aria-label="Close map">&times;</button></div>
+    <div class="map-filters">
+      <label class="field">Status<select class="select-field" id="mapStatus"><option value="active">Active incidents</option><option value="all">All incidents</option><option value="new">New</option><option value="acknowledged">Acknowledged</option><option value="assigned">Assigned</option><option value="in_progress">In progress</option><option value="finished">Resolved / Closed</option></select></label>
+      <label class="field">Category<select class="select-field" id="mapCategory"><option value="">All categories</option><option value="fire">Fire</option><option value="police">Police</option><option value="medical">Medical</option><option value="child_services">Child Services</option><option value="other">Other</option></select></label>
+      <label class="field">Severity<select class="select-field" id="mapSeverity"><option value="">All severities</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
+      <label class="field">Reported within<select class="select-field" id="mapDays"><option value="">Any time</option><option value="1">24 hours</option><option value="7">7 days</option><option value="30">30 days</option></select></label>
     </div>
-  </div>
-
-  <!-- Staff login modal -->
-  <div class="modal-overlay" id="loginModalOverlay" hidden>
-    <div class="modal">
-      <div class="modal-header">
-        <h2>Staff login</h2>
-        <button class="modal-close" id="closeLoginBtn">&times;</button>
-      </div>
-      <form id="loginForm" class="modal-body">
-        <label class="field">
-          <span>Email</span>
-          <input type="email" id="loginEmail" required />
-        </label>
-        <label class="field">
-          <span>Password</span>
-          <input type="password" id="loginPassword" required />
-        </label>
-        <div class="submit-row">
-          <span class="submit-hint" id="loginHint"></span>
-          <button type="submit" class="btn btn-primary">Log in</button>
-        </div>
-      </form>
+    <div class="map-toolbar">
+      <label class="anon-toggle"><input type="checkbox" id="mapHeatToggle" />Heatmap overlay</label>
+      <label class="field map-weight-field">Heatmap measure<select class="select-field" id="mapHeatMeasure"><option value="density">Incident density</option><option value="severity">Severity weighted</option></select></label>
+      <button class="btn btn-ghost" id="mapFitBtn">Fit filtered incidents</button><button class="btn btn-ghost" id="mapRetryBtn">Retry map tiles</button>
     </div>
+    <p class="help map-summary" id="mapSummary" role="status" aria-live="polite"></p>
+    <p class="help map-error" id="mapError" role="status" hidden></p>
+    <div id="incidentMap" class="incident-map" role="region" aria-label="Interactive incident map"></div>
+    <div class="map-footer"><div class="map-legend" aria-label="Marker severity legend"><span><i class="legend-dot sev-low"></i>Low</span><span><i class="legend-dot sev-medium"></i>Medium</span><span><i class="legend-dot sev-high"></i>High</span><span><i class="legend-dot sev-critical"></i>Critical</span><span><i class="legend-dot sev-other"></i>Pending</span></div><div id="heatLegend" hidden><span class="heat-gradient"></span><span class="help">Lower to higher concentration</span></div><p class="help">Pan or zoom to inspect an area. Text-only locations need coordinates before they can appear here.</p></div>
   </div>
-
-  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="config.js"></script>
-  <script src="app.js"></script>
-</body>
-</html>
+</div>
+<script src="/vendor/supabase.js"></script><script src="config.js"></script><script src="/vendor/leaflet/leaflet.js"></script><script src="/vendor/leaflet-heat.js"></script><script src="map-data.js"></script><script src="incident-map.js"></script><script src="app.js"></script>
+</body></html>
