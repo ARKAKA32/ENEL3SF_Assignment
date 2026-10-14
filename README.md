@@ -1,4 +1,4 @@
-# Sentry — Increment 2
+# Sentry — Incident map increment
 
 Emergency incident reporting with Supabase Auth/Postgres/Storage/Realtime and a Node/Express server. `supabase/schema.sql` is the application schema; reconciling the report's ERD is deferred.
 
@@ -12,7 +12,7 @@ Emergency incident reporting with Supabase Auth/Postgres/Storage/Realtime and a 
 - Admin-only named assignment to active operators/responders/admins. Staff can edit status, severity and category. Database enforcement complements the UI controls.
 - Atomic edits and audit events, a stale-edit conflict check, private notes by default, and optional notes visible to the reporter.
 - Capitalised severity labels; timeline headings such as **STATUS CHANGED**.
-- An accessible dashboard button opening a blank incident-map window for the next increment.
+- An interactive staff incident map with severity markers, report popups, status/category/severity/date filters, and optional density or severity-weighted heatmap.
 - Search, category/severity filters, counters for the whole queue, rate limiting, checked errors, and a periodic refresh fallback.
 
 ## Upgrade an existing Supabase project
@@ -74,7 +74,7 @@ Copy the values into the ignored `.env` file as `VAPID_PUBLIC_KEY` and `VAPID_PR
 
 Log in, open **Report / My account** if you are staff, and click **Enable push notifications**. The user must allow the browser permission prompt. Push uses a service worker and requires HTTPS, except on localhost. Browser/OS settings can suppress delivery; iOS/iPadOS may require installing the web app to the Home Screen. See [MDN's Push API documentation](https://developer.mozilla.org/en-US/docs/Web/API/Push_API) and the [web-push library](https://github.com/web-push-libs/web-push).
 
-Publishing a broadcast sends it to every active subscribed account. Updating status/category/severity, or adding a public note, sends a generic update to the identified reporter's subscribed devices. Anonymous reports cannot be linked to an account and do not receive private report notifications. Area targeting is deferred with the interactive map. Internal notes and assignment changes do not trigger private reporter notifications.
+Publishing a broadcast sends it to every active subscribed account. Updating status/category/severity, or adding a public note, sends a generic update to the identified reporter's subscribed devices. Anonymous reports cannot be linked to an account and do not receive private report notifications. Broadcasts still target all subscribed accounts; area-based broadcast targeting is separate from the staff incident map. Internal notes and assignment changes do not trigger private reporter notifications.
 
 Push is best effort: the database remains authoritative. Failed delivery never undoes a saved report/update/broadcast. Expired subscriptions (HTTP 404/410) are removed, and transient failures surface a warning to staff. This version does not have a persistent notification outbox or automatic retry queue. Existing subscriptions are resynchronised on login. If the browser removes a subscription, opt in again.
 
@@ -95,7 +95,7 @@ Before deployment, verify with a development Supabase project:
 3. As admin, assign an active responder, change category/severity and add both a private and a public note. Confirm the reporter sees only public history. As responder, confirm assignment cannot be changed, including through a direct RPC call.
 4. Open a stale incident in another browser, update it elsewhere and attempt to save. Confirm the stale save is rejected. Refresh and retry.
 5. Opt in to push on the civilian device, close/minimise the app, then make a staff status change. Verify the device notification and click-through. Publish a broadcast and verify it reaches subscribed devices. Sign out and confirm this device stops receiving notifications.
-6. Verify expired broadcasts disappear and the map placeholder is reachable on desktop/mobile.
+6. Verify expired broadcasts disappear and the interactive map is reachable on desktop/mobile.
 
 ## Remaining small/medium improvements
 
@@ -106,4 +106,22 @@ Before deployment, verify with a development Supabase project:
 - Password reset and email-change flows; phone/OTP authentication remains deferred.
 - Offline draft saving, then queued submission with clear sync status.
 
-Interactive mapping/geocoding and the report/schema reconciliation remain outside this increment.
+Geocoding and the report/schema reconciliation remain outside this increment.
+
+
+## Interactive incident map
+
+This increment builds on commit `b0d9642` (the second increment). No new database migration or map API key is required. Run `npm ci` to install the two added map dependencies, then restart the server. Open **Open incident map** on the staff dashboard.
+
+The map uses locally served Leaflet 1.9.4 and Leaflet.heat 0.2.0 with OpenStreetMap raster tiles. Visible attribution is retained and browser caching is respected. No offline tile download or prefetch feature is included. For wider deployment, select a tile provider suitable for expected traffic and configure `MAP_TILE_URL` and `MAP_TILE_ATTRIBUTION` in `public/config.js`. Consult [the OpenStreetMap tile policy](https://operations.osmfoundation.org/policies/tiles/). Map libraries: [Leaflet](https://leafletjs.com/) and [Leaflet.heat](https://github.com/Leaflet/Leaflet.heat).
+
+- The default view shows active incidents. Choose all incidents or resolved/closed incidents to inspect historical reports.
+- Filter by category, severity and report age (24 hours, 7 days, 30 days or any time). Map filters are separate from queue filters.
+- Markers use blue/yellow/orange/red for Low/Medium/High/Critical severity, with grey for pending classification. Open a marker and select **Open incident** to continue in the existing incident console.
+- **Heatmap overlay** shows relative concentration in the area you pan/zoom to. Incident density gives every mapped report equal weight. Severity weighting uses Low=0.25, Medium=0.5, High=0.75 and Critical=1 (pending=0.25). Heat is aggregated over screen pixels and changes with zoom; it is a visual summary, not a geographic risk estimate.
+- **Fit filtered incidents** brings all matching geolocated reports into view. Realtime updates preserve your current view; the summary shows the number in the current area, total mapped and reports without usable coordinates.
+- Reports with text-only, missing or invalid coordinates remain in the queue and are counted as unmapped. Addresses are not sent to a geocoder or plotted at guessed coordinates. Existing reports need valid latitude/longitude to appear as markers. Coordinates of zero are supported.
+- Map data is taken from the existing staff/RLS feed. The tile provider receives requests for the viewed map area; incident text, IDs and severity are rendered locally. The map is cleared at logout/account changes.
+- A tile-load failure displays a message and **Retry map tiles** reloads the basemap. Existing incident markers remain available.
+
+The dashboard now constrains inputs/selects to the sidebar width, uses thin vertical scrollbars and lets grid children shrink. At widths up to 1250 px, details open as a side drawer; at widths up to 900 px, filters open as a mobile sidebar. This avoids a fixed three-column dashboard crowding smaller screens.

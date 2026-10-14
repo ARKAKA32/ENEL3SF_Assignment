@@ -34,6 +34,7 @@ function timelineHtml(history) {
 function optionsHtml(labels, selected, pending = false) {
   return (pending ? `<option value="" ${selected == null ? 'selected' : ''}>Pending classification</option>` : '') + Object.entries(labels).map(([value,label]) => `<option value="${value}" ${value === selected ? 'selected' : ''}>${label}</option>`).join('');
 }
+const incidentMap = window.createIncidentMap({ canOpen: staffUser, onSelect: selectIncident, categoryLabels: CATEGORY_LABEL, severityLabels: SEVERITY_LABEL, statusLabels: STATUS_LABEL });
 let registerMode = false;
 function authMode(register) {
   registerMode = register;
@@ -84,6 +85,7 @@ async function applySession(session) {
     }
     profile = result.data;
   }
+  incidentMap.reset(); state.incidents = [];
   state.profile = profile;
   if (state.channel) await sb.removeChannel(state.channel);
   if (request !== state.authRequest) return;
@@ -104,7 +106,7 @@ async function applySession(session) {
   subscribeRealtime();
   await updatePushButton();
 }
-function showPublicView() { $('publicView').hidden = false; $('dashboardView').hidden = true; }
+function showPublicView() { incidentMap.close(); $('publicView').hidden = false; $('dashboardView').hidden = true; }
 function showDashboard() {
   if (!staffUser()) return;
   $('publicView').hidden = true; $('dashboardView').hidden = false;
@@ -211,7 +213,10 @@ function subscribeRealtime() {
 async function loadIncidents() {
   if (!staffUser()) return;
   try {
-    state.incidents = await rows(sb.from('incidents').select('*').order('created_at',{ ascending: false }));
+    const authRequest = state.authRequest;
+    const incidents = await rows(sb.from('incidents').select('*').order('created_at',{ ascending: false }));
+    if (authRequest !== state.authRequest || !staffUser()) return;
+    state.incidents = incidents; incidentMap.update(incidents);
     renderQueue();
     const open = state.incidents.filter((inc) => !['resolved','closed'].includes(inc.status));
     $('statOpen').textContent = open.length; $('statCritical').textContent = open.filter((inc) => inc.severity === 'critical').length;
@@ -348,9 +353,9 @@ function wireModal(overlay, close) {
   $(close).addEventListener('click', () => { $(overlay).hidden = true; });
   $(overlay).addEventListener('click', (event) => { if (event.target === $(overlay)) $(overlay).hidden = true; });
 }
-wireModal('loginModalOverlay','closeLoginBtn'); wireModal('mapModalOverlay','closeMapBtn');
-$('mapBtn').addEventListener('click', () => { $('mapModalOverlay').hidden = false; closeSidebar(); $('closeMapBtn').focus(); });
-document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { $('loginModalOverlay').hidden = true; $('mapModalOverlay').hidden = true; closeSidebar(); } });
+wireModal('loginModalOverlay','closeLoginBtn');
+$('mapBtn').addEventListener('click', () => { closeSidebar(); incidentMap.open(); });
+document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { $('loginModalOverlay').hidden = true; incidentMap.close(); closeSidebar(); } });
 setInterval(() => { $('clock').textContent = new Date().toLocaleTimeString('en-GB'); },1000);
 // A fallback for interrupted realtime connections and broadcast expiry.
 setInterval(() => { if (!document.hidden) refreshFeeds(); },30000);

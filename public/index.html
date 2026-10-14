@@ -6,6 +6,7 @@
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0b0f14">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/vendor/leaflet/leaflet.css" />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -22,7 +23,7 @@
       <div id="gpsFields" hidden><button type="button" class="btn btn-ghost" id="useLocationBtn">Use my location</button></div>
       <div id="manualFields" hidden>
         <label class="field">Address or landmark<input id="locationText" maxlength="500" placeholder="e.g. Gate 3, Main Road, Durban" /></label>
-        <p class="help">Coordinates are optional. A map will be added in a later increment.</p>
+        <p class="help">Coordinates are optional. Coordinates let staff place the report on the incident map.</p>
         <div class="coordinate-fields"><label class="field">Latitude<input type="number" id="latitudeInput" min="-90" max="90" step="any" placeholder="-29.86" /></label><label class="field">Longitude<input type="number" id="longitudeInput" min="-180" max="180" step="any" placeholder="31.03" /></label></div>
       </div>
       <span id="locationStatus" class="location-status" role="status"></span>
@@ -82,6 +83,25 @@
     <button type="button" class="btn btn-ghost" id="authModeBtn">Create an account</button>
   </form>
 </div></div>
-<div class="modal-overlay" id="mapModalOverlay" hidden><div class="modal map-modal" role="dialog" aria-modal="true" aria-labelledby="mapTitle"><div class="modal-header"><h2 id="mapTitle">Incident map</h2><button class="modal-close" id="closeMapBtn" aria-label="Close map">&times;</button></div><div class="map-placeholder"><p>Interactive map coming in the next increment.</p><p class="help">Incident coordinates and manual locations are available in each report.</p></div></div></div>
-<script src="/vendor/supabase.js"></script><script src="config.js"></script><script src="app.js"></script>
+<div class="modal-overlay" id="mapModalOverlay" hidden>
+  <div class="modal map-modal" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
+    <div class="modal-header"><div><h2 id="mapTitle">Incident map</h2><p class="help">Explore reports by location and open an incident from its marker.</p></div><button class="modal-close" id="closeMapBtn" aria-label="Close map">&times;</button></div>
+    <div class="map-filters">
+      <label class="field">Status<select class="select-field" id="mapStatus"><option value="active">Active incidents</option><option value="all">All incidents</option><option value="new">New</option><option value="acknowledged">Acknowledged</option><option value="assigned">Assigned</option><option value="in_progress">In progress</option><option value="finished">Resolved / Closed</option></select></label>
+      <label class="field">Category<select class="select-field" id="mapCategory"><option value="">All categories</option><option value="fire">Fire</option><option value="police">Police</option><option value="medical">Medical</option><option value="child_services">Child Services</option><option value="other">Other</option></select></label>
+      <label class="field">Severity<select class="select-field" id="mapSeverity"><option value="">All severities</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
+      <label class="field">Reported within<select class="select-field" id="mapDays"><option value="">Any time</option><option value="1">24 hours</option><option value="7">7 days</option><option value="30">30 days</option></select></label>
+    </div>
+    <div class="map-toolbar">
+      <label class="anon-toggle"><input type="checkbox" id="mapHeatToggle" />Heatmap overlay</label>
+      <label class="field map-weight-field">Heatmap measure<select class="select-field" id="mapHeatMeasure"><option value="density">Incident density</option><option value="severity">Severity weighted</option></select></label>
+      <button class="btn btn-ghost" id="mapFitBtn">Fit filtered incidents</button><button class="btn btn-ghost" id="mapRetryBtn">Retry map tiles</button>
+    </div>
+    <p class="help map-summary" id="mapSummary" role="status" aria-live="polite"></p>
+    <p class="help map-error" id="mapError" role="status" hidden></p>
+    <div id="incidentMap" class="incident-map" role="region" aria-label="Interactive incident map"></div>
+    <div class="map-footer"><div class="map-legend" aria-label="Marker severity legend"><span><i class="legend-dot sev-low"></i>Low</span><span><i class="legend-dot sev-medium"></i>Medium</span><span><i class="legend-dot sev-high"></i>High</span><span><i class="legend-dot sev-critical"></i>Critical</span><span><i class="legend-dot sev-other"></i>Pending</span></div><div id="heatLegend" hidden><span class="heat-gradient"></span><span class="help">Lower to higher concentration</span></div><p class="help">Pan or zoom to inspect an area. Text-only locations need coordinates before they can appear here.</p></div>
+  </div>
+</div>
+<script src="/vendor/supabase.js"></script><script src="config.js"></script><script src="/vendor/leaflet/leaflet.js"></script><script src="/vendor/leaflet-heat.js"></script><script src="map-data.js"></script><script src="incident-map.js"></script><script src="app.js"></script>
 </body></html>

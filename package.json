@@ -1,7 +1,24 @@
 {
-  "name": "sentry-v2", "version": "2.0.0", "main": "server/index.js",
-  "scripts": { "start": "node server/index.js", "test": "node --test test/*.test.js" },
+  "name": "sentry-v2",
+  "version": "2.1.0",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test test/*.test.js"
+  },
   "license": "ISC",
-  "dependencies": { "@supabase/supabase-js": "^2.116.0", "dotenv": "^18.0.1", "express": "^5.2.1", "express-rate-limit": "^8.0.0", "multer": "^2.0.2", "web-push": "^3.6.7" },
-  "devDependencies": { "@electric-sql/pglite": "^0.3.0", "supertest": "^7.0.0" }
+  "dependencies": {
+    "@supabase/supabase-js": "^2.116.0",
+    "dotenv": "^18.0.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.0.0",
+    "leaflet": "1.9.4",
+    "leaflet.heat": "0.2.0",
+    "multer": "^2.0.2",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.3.0",
+    "supertest": "^7.0.0"
+  }
 }

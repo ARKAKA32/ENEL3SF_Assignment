@@ -23,6 +23,8 @@ function createApp({ db, userClient, classify = classifyIncident, push } = {}) {
   app.use(express.json({ limit: '16kb' }));
   app.use(express.static(path.join(__dirname, '..', 'public')));
   app.get('/vendor/supabase.js', (req, res) => res.sendFile(path.join(path.dirname(require.resolve('@supabase/supabase-js')), 'umd', 'supabase.js')));
+  app.use('/vendor/leaflet', express.static(path.join(path.dirname(require.resolve('leaflet')), '..', 'dist')));
+  app.get('/vendor/leaflet-heat.js', (req, res) => res.sendFile(require.resolve('leaflet.heat')));
   app.get('/api/health', (req, res) => res.json({ ok: Boolean(db), ai: Boolean(process.env.ANTHROPIC_API_KEY), supabase: Boolean(db), push: push.enabled }));
   app.get('/api/push/config', (req, res) => res.json({ enabled: push.enabled, public_key: push.enabled ? process.env.VAPID_PUBLIC_KEY : null }));
   app.use('/api', (req, res, next) => db ? next() : res.status(503).json({ error: 'Server setup is incomplete. Configure the Supabase environment variables.' }));
