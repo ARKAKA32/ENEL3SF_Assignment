@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sentry &mdash; Incident Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="console">
+
+    <header class="topbar">
+      <div class="brand">
+        <button class="menu-toggle" id="menuToggleBtn" aria-label="Open filters">&#9776;</button>
+        <span class="brand-mark">&#9679;</span>
+        <span class="brand-name">SENTRY</span>
+        <span class="brand-sub">INCIDENT CONSOLE</span>
+      </div>
+      <div class="topbar-right">
+        <div class="clock" id="clock">--:--:--</div>
+        <button class="btn btn-primary" id="openReportBtn">
+          <span class="btn-full">+ New Report</span>
+          <span class="btn-short">+ New</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <div class="layout">
+
+      <aside class="sidebar" id="sidebar">
+        <button class="sidebar-close" id="sidebarCloseBtn" aria-label="Close filters">&times;</button>
+        <div class="sidebar-block">
+          <div class="sidebar-label">Queue</div>
+          <nav class="status-nav" id="statusNav">
+            <button class="status-item active" data-status="">All incidents</button>
+            <button class="status-item" data-status="new">New</button>
+            <button class="status-item" data-status="acknowledged">Acknowledged</button>
+            <button class="status-item" data-status="assigned">Assigned</button>
+            <button class="status-item" data-status="in_progress">In progress</button>
+            <button class="status-item" data-status="resolved">Resolved</button>
+            <button class="status-item" data-status="closed">Closed</button>
+          </nav>
+        </div>
+
+        <div class="sidebar-block">
+          <div class="sidebar-label">Category</div>
+          <div class="legend" id="categoryLegend">
+            <button class="legend-item" data-category="">
+              <span class="swatch swatch-all"></span> All
+            </button>
+            <button class="legend-item" data-category="fire">
+              <span class="swatch sev-critical"></span> Fire
+            </button>
+            <button class="legend-item" data-category="police">
+              <span class="swatch sev-high"></span> Police
+            </button>
+            <button class="legend-item" data-category="medical">
+              <span class="swatch sev-medium"></span> Medical
+            </button>
+            <button class="legend-item" data-category="child_services">
+              <span class="swatch sev-low"></span> Child Services
+            </button>
+            <button class="legend-item" data-category="other">
+              <span class="swatch sev-other"></span> Other
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-block stats-block">
+          <div class="sidebar-label">Snapshot</div>
+          <div class="stats" id="statsBlock">
+            <div class="stat-row"><span>Open</span><span id="statOpen">0</span></div>
+            <div class="stat-row"><span>Critical</span><span id="statCritical">0</span></div>
+            <div class="stat-row"><span>Resolved today</span><span id="statResolved">0</span></div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="queue-panel">
+        <div class="queue-header">
+          <h1 id="queueTitle">All incidents</h1>
+          <span class="queue-count" id="queueCount">0 reports</span>
+        </div>
+        <div class="queue-list" id="queueList">
+          <div class="empty-state">Loading incidents&hellip;</div>
+        </div>
+      </main>
+
+      <aside class="detail-drawer" id="detailDrawer">
+        <div class="drawer-empty" id="drawerEmpty">
+          <p>Select an incident to view details.</p>
+        </div>
+        <div class="drawer-content" id="drawerContent" hidden></div>
+      </aside>
+
+    </div>
+  </div>
+
+  <!-- New report modal -->
+  <div class="modal-overlay" id="reportModalOverlay" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Report an incident</h2>
+        <button class="modal-close" id="closeReportBtn">&times;</button>
+      </div>
+      <form id="reportForm" class="modal-body">
+        <label class="field">
+          <span>What's happening?</span>
+          <textarea id="messageInput" rows="4" placeholder="Describe the situation as clearly as you can &mdash; what, where, and who's involved." required></textarea>
+        </label>
+        <div class="field-row">
+          <label class="field">
+            <span>Your name (optional)</span>
+            <input type="text" id="nameInput" placeholder="Jane Doe" />
+          </label>
+          <label class="field">
+            <span>Contact (optional)</span>
+            <input type="text" id="contactInput" placeholder="Phone or email" />
+          </label>
+        </div>
+        <div class="submit-row">
+          <span class="submit-hint" id="submitHint"></span>
+          <button type="submit" class="btn btn-primary" id="submitReportBtn">Submit report</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
